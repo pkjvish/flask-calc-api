@@ -14,7 +14,7 @@ on:
 # Secrets and variables → Actions.
 # ─────────────────────────────────────────────────────────────────────────────
 env:
-  AWS_REGION: us-east-1                 # ← change to your region
+  AWS_REGION: ap-south-1                 # ← change to your region
   ECR_REPOSITORY: calc-api              # ← must match the ECR repo name you created
   ECS_CLUSTER: calc-api-cluster         # ← your ECS cluster name
   ECS_SERVICE: calc-api-service         # ← your ECS service name
@@ -64,6 +64,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          #AKIAR7AHBFZHMB2AAD4K #P3XpIDib+ZjJRi1TWPhc3ftbLFffJULuoPWXJ6LD
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 

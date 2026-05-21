@@ -105,7 +105,7 @@ Open `.github/workflows/deploy.yml` and edit the `env:` block at the top:
 
 ```yaml
 env:
-  AWS_REGION: us-east-1           # your AWS region
+  AWS_REGION: ap-south-1           # your AWS region
   ECR_REPOSITORY: calc-api        # must match ECR repo name
   ECS_CLUSTER: calc-api-cluster   # your ECS cluster name
   ECS_SERVICE: calc-api-service   # your ECS service name
@@ -137,7 +137,7 @@ env:
 # Using AWS CLI (or do this in the Console)
 aws ecr create-repository \
     --repository-name calc-api \
-    --region us-east-1
+    --region ap-south-1
 ```
 
 **Console steps:**
@@ -155,7 +155,7 @@ aws ecr create-repository \
 aws ecs create-cluster \
     --cluster-name calc-api-cluster \
     --capacity-providers FARGATE \
-    --region us-east-1
+    --region ap-south-1
 ```
 
 **Console steps:**
@@ -203,7 +203,7 @@ aws iam attach-role-policy \
 ```bash
 aws logs create-log-group \
     --log-group-name /ecs/calc-api \
-    --region us-east-1
+    --region ap-south-1
 ```
 
 **Console:** CloudWatch → Log groups → Create log group → `/ecs/calc-api`
@@ -217,14 +217,14 @@ aws logs create-log-group \
 | Placeholder       | Replace with                                  |
 |-------------------|-----------------------------------------------|
 | `<ACCOUNT_ID>`    | Your 12-digit AWS account ID                  |
-| `<AWS_REGION>`    | e.g. `us-east-1`                              |
+| `<AWS_REGION>`    | e.g. `ap-south-1`                              |
 
 2. Register the task definition:
 
 ```bash
 aws ecs register-task-definition \
     --cli-input-json file://ecs-task-definition.json \
-    --region us-east-1
+    --region ap-south-1
 ```
 
 ---
@@ -272,7 +272,7 @@ aws ecs create-service \
         securityGroups=[<SG_ID>],
         assignPublicIp=ENABLED
     }" \
-    --region us-east-1
+    --region ap-south-1
 ```
 
 **Console steps:**
