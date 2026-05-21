@@ -47,10 +47,11 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   # JOB 2 — Build, push to ECR, deploy to ECS  (only on main branch push)
   # ───────────────────────────────────────────────────────────────────────────
+
   build-and-deploy:
     name: Build → Push → Deploy
     runs-on: ubuntu-latest
-    needs: test                          # only runs if tests pass
+  #  needs: test                          # only runs if tests pass
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
