@@ -1,0 +1,105 @@
+name: CI/CD → ECR → ECS
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Triggers
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Environment variables (non-secret).  Secrets come from GitHub → Settings →
+# Secrets and variables → Actions.
+# ─────────────────────────────────────────────────────────────────────────────
+env:
+  AWS_REGION: us-east-1                 # ← change to your region
+  ECR_REPOSITORY: calc-api              # ← must match the ECR repo name you created
+  ECS_CLUSTER: calc-api-cluster         # ← your ECS cluster name
+  ECS_SERVICE: calc-api-service         # ← your ECS service name
+  CONTAINER_NAME: calc-api              # ← must match containerDefinitions[].name in task def
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 1 — Run unit tests
+  # ───────────────────────────────────────────────────────────────────────────
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pytest
+        run: pytest tests/ -v --tb=short
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 2 — Build, push to ECR, deploy to ECS  (only on main branch push)
+  # ───────────────────────────────────────────────────────────────────────────
+  build-and-deploy:
+    name: Build → Push → Deploy
+    runs-on: ubuntu-latest
+    needs: test                          # only runs if tests pass
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      # 1. Checkout
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # 2. Configure AWS credentials (stored as GitHub secrets)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 3. Authenticate Docker to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 4. Build image, tag with git SHA and "latest", push both tags
+      - name: Build, tag, and push Docker image to ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+                       -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          # Pass full image URI to the next step
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # 5. Inject the new image URI into the task definition file
+      - name: Render new ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ecs-task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      # 6. Register the new task definition revision and update the ECS service
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          # Wait until the new task is RUNNING before marking the workflow green
+          wait-for-service-stability: true
