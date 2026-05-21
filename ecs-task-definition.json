@@ -4,11 +4,13 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskExecutionRole",
+ 
+  "executionRoleArn": "arn:aws:iam::135306227278:role/ecsTaskExecutionRole",
   "containerDefinitions": [
     {
       "name": "calc-api",
-      "image": "<ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/calc-api:latest",
+      "image": "135306227278.dkr.ecr.ap-south-1.amazonaws.com/calc-api",
+      
       "essential": true,
       "portMappings": [
         {
@@ -23,7 +25,7 @@
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/calc-api",
-          "awslogs-region": "<AWS_REGION>",
+          "awslogs-region": "ap-south-1",
           "awslogs-stream-prefix": "ecs"
         }
       },
