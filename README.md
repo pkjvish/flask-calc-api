@@ -1,3 +1,5 @@
+FYI - this is working model , tested on AWS and working fine
+
 # Flask Calculation API — Full Deployment Guide
 ### Python Flask · Docker · GitHub Actions · AWS ECR + ECS Fargate
 
